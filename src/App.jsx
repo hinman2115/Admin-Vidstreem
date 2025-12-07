@@ -1,6 +1,6 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import AuthPage from "./AuthPage";
+import AuthPage from "./Authpage.jsx";
 import VidStreemDashboard from "./movies";
 import UploadVideo from "./UploadVideo.jsx";
 
