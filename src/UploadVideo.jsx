@@ -1,6 +1,6 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function UploadVideo() {
     const navigate = useNavigate();
@@ -36,7 +36,10 @@ function UploadVideo() {
         formData.append("ContentType", "movie");
 
         try {
-            await axios.post("/api/VideohandelApi/upload", formData, {headers: {"Content-Type": "multipart/form-data"}}
+            await axios.post(
+                "/api/VideohandelApi/upload",
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
             );
 
             setMessage("Upload successful! ✔");
@@ -92,7 +95,7 @@ function UploadVideo() {
                         <span style={styles.brandMini}>VS</span>
                     ) : (
                         <span style={styles.brandFull}>
-                            Vid<span style={{color: "#ff6b00"}}>Streem</span>
+                            Vid<span style={{ color: "#ff6b00" }}>Streem</span>
                         </span>
                     )}
                 </div>
@@ -105,7 +108,7 @@ function UploadVideo() {
                         <span style={styles.navIcon}>▣</span>
                         {!sidebarCollapsed && <span>Dashboard</span>}
                     </button>
-                    <button style={{...styles.navItem, ...styles.navItemActive}}>
+                    <button style={{ ...styles.navItem, ...styles.navItemActive }}>
                         <span style={styles.navIcon}>⬆</span>
                         {!sidebarCollapsed && <span>Upload Video</span>}
                     </button>
@@ -279,7 +282,7 @@ function UploadVideo() {
                         <div style={styles.videoGrid}>
                             {videos.slice(0, 8).map(v => (
                                 <div key={v.id} style={styles.videoCard}>
-                                    <img src={v.thumbnailUrl} alt={v.title} style={styles.thumbnail}/>
+                                    <img src={v.thumbnailUrl} alt={v.title} style={styles.thumbnail} />
                                     <div style={styles.videoInfo}>
                                         <p style={styles.videoTitle}>{v.title}</p>
                                         <span style={styles.categoryTag}>{v.categoryName}</span>
@@ -319,8 +322,8 @@ const styles = {
         padding: "20px 18px",
         borderBottom: "1px solid rgba(0,0,0,0.04)",
     },
-    brandFull: {fontWeight: 700, fontSize: 22, color: "#000"},
-    brandMini: {fontWeight: 700, fontSize: 18, color: "#ff6b00"},
+    brandFull: { fontWeight: 700, fontSize: 22, color: "#000" },
+    brandMini: { fontWeight: 700, fontSize: 18, color: "#ff6b00" },
     navList: {
         flex: 1,
         padding: "12px 8px",
@@ -346,7 +349,7 @@ const styles = {
         color: "#ff6b00",
         boxShadow: "0 0 0 1px rgba(255,107,0,0.25)",
     },
-    navIcon: {fontSize: 16, width: 20, textAlign: "center"},
+    navIcon: { fontSize: 16, width: 20, textAlign: "center" },
     collapse: {
         margin: 12,
         padding: "8px 10px",
@@ -379,9 +382,9 @@ const styles = {
         flexWrap: "wrap",
         gap: 12,
     },
-    topTitle: {margin: 0, fontSize: 22, fontWeight: 700, color: "#000"},
-    breadcrumb: {margin: 0, fontSize: 12, color: "#000", marginTop: 2, opacity: 0.6},
-    topRight: {display: "flex", alignItems: "center", gap: 12},
+    topTitle: { margin: 0, fontSize: 22, fontWeight: 700, color: "#000" },
+    breadcrumb: { margin: 0, fontSize: 12, color: "#000", marginTop: 2, opacity: 0.6 },
+    topRight: { display: "flex", alignItems: "center", gap: 12 },
     secondaryBtn: {
         padding: "9px 18px",
         borderRadius: 999,

@@ -1,50 +1,77 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./css/VidStreemDashboard.css";
 
-function VidStreemDashboard() {
+function UploadVideo() {
     const navigate = useNavigate();
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [categoryId, setCategoryId] = useState("");
+    const [duration, setDuration] = useState("");
+    const [videoFile, setVideoFile] = useState(null);
+    const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [message, setMessage] = useState("");
+    const [messageType, setMessageType] = useState(""); // success or error
     const [videos, setVideos] = useState([]);
-    const [loading, setLoading] = useState(true);
-     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [showAvatarMenu, setShowAvatarMenu] = useState(false); // New state
+    const [uploading, setUploading] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!videoFile || !thumbnailFile) {
+            setMessage("Please select video and thumbnail files.");
+            setMessageType("error");
+            return;
+        }
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append("Title", title);
+        formData.append("Description", description);
+        formData.append("CategoryId", categoryId);
+        formData.append("Duration", duration);
+        formData.append("FilePath", videoFile);
+        formData.append("ThumbnailPath", thumbnailFile);
+        formData.append("ContentType", "movie");
+
+        try {
+            await axios.post(
+                "/api/VideohandelApi/upload",
+                formData,
+                { headers: { "Content-Type": "multipart/form-data" } }
+            );
+
+            setMessage("Upload successful! ✔");
+            setMessageType("success");
+
+            // Reset form
+            setTitle("");
+            setDescription("");
+            setCategoryId("");
+            setDuration("");
+            setVideoFile(null);
+            setThumbnailFile(null);
+
+            loadThumbnails();
+        } catch (error) {
+            console.error("Upload failed:", error);
+            setMessage("Upload failed. Please try again. ❌");
+            setMessageType("error");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const loadThumbnails = () => {
+        axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
+            .then(res => setVideos(res.data))
+            .catch(err => console.error("Error loading videos:", err));
+    };
 
     useEffect(() => {
-
-        axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
-            .then((res) => {
-                setVideos(res.data);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+        loadThumbnails();
     }, []);
-
-    const filtered = videos.filter(v =>
-        v.title?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("role");
-        localStorage.removeItem("name");
-        navigate("/auth");
-    };
-
-    const handleAddVideo = () => {
-        navigate("/uploadvideo");
-    };
-
-    if (loading) {
-        return (
-            <div style={styles.fullscreenCenter}>
-                <div style={styles.spinner} />
-                <p style={{ marginTop: 12, color: "#ff6b00" }}>Loading VidStreem...</p>
-            </div>
-        );
-    }
 
     const userName = localStorage.getItem("name") || "Admin";
     const userInitials = userName
@@ -56,7 +83,7 @@ function VidStreemDashboard() {
 
     return (
         <div style={styles.appShell}>
-             Sidebar
+            {/* Sidebar */}
             <aside
                 style={{
                     ...styles.sidebar,
@@ -74,11 +101,17 @@ function VidStreemDashboard() {
                 </div>
 
                 <nav style={styles.navList}>
-                    <button style={{ ...styles.navItem, ...styles.navItemActive }}>
+                    <button
+                        style={styles.navItem}
+                        onClick={() => navigate("/dashboard")}
+                    >
                         <span style={styles.navIcon}>▣</span>
                         {!sidebarCollapsed && <span>Dashboard</span>}
                     </button>
-
+                    <button style={{ ...styles.navItem, ...styles.navItemActive }}>
+                        <span style={styles.navIcon}>⬆</span>
+                        {!sidebarCollapsed && <span>Upload Video</span>}
+                    </button>
                     <button style={styles.navItem}>
                         <span style={styles.navIcon}>▶</span>
                         {!sidebarCollapsed && <span>Videos</span>}
@@ -86,10 +119,6 @@ function VidStreemDashboard() {
                     <button style={styles.navItem}>
                         <span style={styles.navIcon}>▦</span>
                         {!sidebarCollapsed && <span>Categories</span>}
-                    </button>
-                    <button style={styles.navItem}>
-                        <span style={styles.navIcon}>📈</span>
-                        {!sidebarCollapsed && <span>Analytics</span>}
                     </button>
                     <button style={styles.navItem}>
                         <span style={styles.navIcon}>⚙</span>
@@ -109,139 +138,154 @@ function VidStreemDashboard() {
             <div
                 style={{
                     ...styles.mainArea,
-                     marginLeft: sidebarCollapsed ? 80 : 240,
+                    marginLeft: sidebarCollapsed ? 80 : 240,
                 }}
             >
                 {/* Top bar */}
                 <header style={styles.topBar}>
                     <div>
-                        <h1 style={styles.topTitle}>Video Management</h1>
-                        <p style={styles.breadcrumb}>Dashboard / Videos</p>
+                        <h1 style={styles.topTitle}>Upload Video</h1>
+                        <p style={styles.breadcrumb}>Dashboard / Upload</p>
                     </div>
 
                     <div style={styles.topRight}>
-                        <div style={styles.searchBox}>
-                            <input
-                                style={styles.searchInput}
-                                placeholder="Search videos..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <button style={styles.primaryBtn} onClick={handleAddVideo}>
-                            + Add Video
+                        <button
+                            style={styles.secondaryBtn}
+                            onClick={() => navigate("/dashboard")}
+                        >
+                            ← Back to Dashboard
                         </button>
-
-                        {/* Avatar with dropdown */}
-                        <div style={styles.avatarContainer}>
-                            <div
-                                style={styles.avatar}
-                                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-                            >
-                                {userInitials}
-                            </div>
-
-                            {showAvatarMenu && (
-                                <div style={styles.avatarMenu}>
-                                    <div style={styles.menuHeader}>
-                                        <p style={styles.menuName}>{userName}</p>
-                                        <p style={styles.menuEmail}>
-                                            {localStorage.getItem("role") || "User"}
-                                        </p>
-                                    </div>
-                                    <div style={styles.menuDivider} />
-                                    <button
-                                        style={styles.menuItem}
-                                        onClick={() => navigate("/profile")}
-                                    >
-                                        <span style={styles.menuIcon}>👤</span>
-                                        Profile
-                                    </button>
-                                    <button
-                                        style={styles.menuItem}
-                                        onClick={() => navigate("/settings")}
-                                    >
-                                        <span style={styles.menuIcon}>⚙</span>
-                                        Settings
-                                    </button>
-                                    <div style={styles.menuDivider} />
-                                    <button
-                                        style={styles.menuItemDanger}
-                                        onClick={handleLogout}
-                                    >
-                                        <span style={styles.menuIcon}>🚪</span>
-                                        Logout
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                        <div style={styles.avatar}>{userInitials}</div>
                     </div>
                 </header>
 
                 {/* Content scroll area */}
                 <div style={styles.contentScroll}>
-                    {/* Stats row */}
-                    <div style={styles.statsRow}>
-                        <div style={styles.statCard}>
-                            <div style={styles.statIcon}>▶</div>
-                            <div>
-                                <p style={styles.statLabel}>Total Videos</p>
-                                <h3 style={styles.statValue}>{videos.length}</h3>
+                    {/* Upload Form Card */}
+                    <section style={styles.uploadCard}>
+                        <div style={styles.cardHeader}>
+                            <h2 style={styles.cardTitle}>Video Details</h2>
+                            <p style={styles.cardSubtitle}>Fill in the information below to upload a new video</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} style={styles.form}>
+                            <div style={styles.formRow}>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.label}>Video Title *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter video title"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        style={styles.input}
+                                        required
+                                    />
+                                </div>
+
+                                <div style={styles.formGroup}>
+                                    <label style={styles.label}>Category ID *</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter category ID"
+                                        value={categoryId}
+                                        onChange={(e) => setCategoryId(e.target.value)}
+                                        style={styles.input}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div style={styles.statCard}>
-                            <div style={styles.statIconAlt}>▦</div>
-                            <div>
-                                <p style={styles.statLabel}>Categories</p>
-                                <h3 style={styles.statValue}>
-                                    {[...new Set(videos.map(v => v.categoryName))].length}
-                                </h3>
+                            <div style={styles.formGroup}>
+                                <label style={styles.label}>Description *</label>
+                                <textarea
+                                    placeholder="Enter video description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    style={styles.textarea}
+                                    required
+                                />
                             </div>
-                        </div>
 
-                        <div style={styles.statCard}>
-                            <div style={styles.statIconWarn}>👁</div>
-                            <div>
-                                <p style={styles.statLabel}>Total Views</p>
-                                <h3 style={styles.statValue}>12.5K</h3>
+                            <div style={styles.formRow}>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.label}>Duration (minutes) *</label>
+                                    <input
+                                        type="number"
+                                        placeholder="Enter duration"
+                                        value={duration}
+                                        onChange={(e) => setDuration(e.target.value)}
+                                        style={styles.input}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Table card */}
-                    <section style={styles.tableCard}>
-                        <div style={styles.tableHeaderRow}>
-                            <h2 style={{ margin: 0, fontSize: 18, color: "#000" }}>Video Library</h2>
-                            <button style={styles.chipBtn}>Filter</button>
-                        </div>
-
-                        <div style={styles.tableHead}>
-                            <div style={{ ...styles.th, flex: 0.5 }}>#</div>
-                            <div style={{ ...styles.th, flex: 1 }}>Thumbnail</div>
-                            <div style={{ ...styles.th, flex: 3 }}>Title</div>
-                            <div style={{ ...styles.th, flex: 1.5 }}>Category</div>
-                            <div style={{ ...styles.th, flex: 2 }}>Actions</div>
-                        </div>
-
-                        <div style={styles.tableBody}>
-                            {filtered.map((v, idx) => (
-                                <div key={v.id} style={styles.tr}>
-                                    <div style={{ ...styles.td, flex: 0.5, color: "#000" }}>{idx + 1}</div>
-                                    <div style={{ ...styles.td, flex: 1 }}>
-                                        <img
-                                            src={v.thumbnailUrl}
-                                            alt={v.title}
-                                            style={styles.thumb}
+                            <div style={styles.formRow}>
+                                <div style={styles.formGroup}>
+                                    <label style={styles.label}>Video File (MP4) *</label>
+                                    <div style={styles.fileInputWrapper}>
+                                        <input
+                                            type="file"
+                                            accept="video/*"
+                                            onChange={(e) => setVideoFile(e.target.files[0])}
+                                            style={styles.fileInput}
+                                            required
                                         />
+                                        <div style={styles.fileLabel}>
+                                            <span style={styles.fileIcon}>📹</span>
+                                            {videoFile ? videoFile.name : "Choose video file"}
+                                        </div>
                                     </div>
-                                    <div style={{ ...styles.td, flex: 3, color: "#000" }}>{v.title}</div>
-                                    <div style={{ ...styles.td, flex: 1.5 }}>
-                                        <span style={styles.tag}>{v.categoryName}</span>
+                                </div>
+
+                                <div style={styles.formGroup}>
+                                    <label style={styles.label}>Thumbnail Image *</label>
+                                    <div style={styles.fileInputWrapper}>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setThumbnailFile(e.target.files[0])}
+                                            style={styles.fileInput}
+                                            required
+                                        />
+                                        <div style={styles.fileLabel}>
+                                            <span style={styles.fileIcon}>🖼️</span>
+                                            {thumbnailFile ? thumbnailFile.name : "Choose thumbnail"}
+                                        </div>
                                     </div>
-                                    <div style={{ ...styles.td, flex: 2 }}>
-                                        <button style={styles.smallPrimary}>Edit</button>
-                                        <button style={styles.smallDanger}>Delete</button>
+                                </div>
+                            </div>
+
+                            {message && (
+                                <div style={messageType === "success" ? styles.successMessage : styles.errorMessage}>
+                                    {message}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                style={styles.uploadBtn}
+                                disabled={uploading}
+                            >
+                                {uploading ? "Uploading..." : "⬆ Upload Video"}
+                            </button>
+                        </form>
+                    </section>
+
+                    {/* Recent Uploads */}
+                    <section style={styles.recentCard}>
+                        <div style={styles.cardHeader}>
+                            <h2 style={styles.cardTitle}>Recent Uploads</h2>
+                            <p style={styles.cardSubtitle}>Latest videos uploaded to VidStreem</p>
+                        </div>
+
+                        <div style={styles.videoGrid}>
+                            {videos.slice(0, 8).map(v => (
+                                <div key={v.id} style={styles.videoCard}>
+                                    <img src={v.thumbnailUrl} alt={v.title} style={styles.thumbnail} />
+                                    <div style={styles.videoInfo}>
+                                        <p style={styles.videoTitle}>{v.title}</p>
+                                        <span style={styles.categoryTag}>{v.categoryName}</span>
                                     </div>
                                 </div>
                             ))}
@@ -262,22 +306,6 @@ const styles = {
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         color: "#000",
     },
-    fullscreenCenter: {
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#fff5ec",
-    },
-    spinner: {
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        border: "4px solid #ffe2c2",
-        borderTopColor: "#ff6b00",
-        animation: "spin 1s linear infinite",
-    },
     sidebar: {
         position: "fixed",
         top: 0,
@@ -288,6 +316,7 @@ const styles = {
         display: "flex",
         flexDirection: "column",
         transition: "width 0.3s ease",
+        zIndex: 100,
     },
     sidebarBrand: {
         padding: "20px 18px",
@@ -355,30 +384,17 @@ const styles = {
     },
     topTitle: { margin: 0, fontSize: 22, fontWeight: 700, color: "#000" },
     breadcrumb: { margin: 0, fontSize: 12, color: "#000", marginTop: 2, opacity: 0.6 },
-    topRight: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
-    searchBox: { position: "relative" },
-    searchInput: {
-        padding: "8px 12px",
-        borderRadius: 999,
-        border: "1px solid rgba(0,0,0,0.12)",
-        fontSize: 14,
-        minWidth: 220,
-        outline: "none",
-        color: "#000",
-    },
-    primaryBtn: {
+    topRight: { display: "flex", alignItems: "center", gap: 12 },
+    secondaryBtn: {
         padding: "9px 18px",
         borderRadius: 999,
-        border: "none",
-        background: "linear-gradient(135deg,#ff6b00,#ff8c1a)",
-        color: "#fff",
+        border: "1px solid rgba(255,107,0,0.4)",
+        background: "#fff7ee",
+        color: "#ff6b00",
         fontSize: 14,
         fontWeight: 600,
         cursor: "pointer",
-        transition: "transform 0.2s",
-    },
-    avatarContainer: {
-        position: "relative",
+        transition: "all 0.2s",
     },
     avatar: {
         width: 36,
@@ -391,75 +407,6 @@ const styles = {
         justifyContent: "center",
         fontSize: 14,
         fontWeight: 600,
-        cursor: "pointer",
-        transition: "transform 0.2s",
-    },
-    avatarMenu: {
-        position: "absolute",
-        top: "calc(100% + 8px)",
-        right: 0,
-        background: "#ffffff",
-        borderRadius: 12,
-        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-        minWidth: 200,
-        padding: 8,
-        zIndex: 1000,
-    },
-    menuHeader: {
-        padding: "12px 12px 8px",
-    },
-    menuName: {
-        margin: 0,
-        fontSize: 14,
-        fontWeight: 600,
-        color: "#000",
-    },
-    menuEmail: {
-        margin: 0,
-        fontSize: 12,
-        color: "#666",
-        marginTop: 2,
-    },
-    menuDivider: {
-        height: 1,
-        background: "rgba(0,0,0,0.08)",
-        margin: "8px 0",
-    },
-    menuItem: {
-        width: "100%",
-        padding: "10px 12px",
-        border: "none",
-        background: "transparent",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        fontSize: 14,
-        color: "#000",
-        cursor: "pointer",
-        borderRadius: 8,
-        transition: "background 0.2s",
-        textAlign: "left",
-    },
-    menuItemDanger: {
-        width: "100%",
-        padding: "10px 12px",
-        border: "none",
-        background: "transparent",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        fontSize: 14,
-        color: "#e03131",
-        cursor: "pointer",
-        borderRadius: 8,
-        transition: "background 0.2s",
-        textAlign: "left",
-        fontWeight: 600,
-    },
-    menuIcon: {
-        fontSize: 16,
-        width: 20,
-        textAlign: "center",
     },
     contentScroll: {
         flex: 1,
@@ -467,145 +414,171 @@ const styles = {
         overflowY: "auto",
         padding: "24px 28px 32px",
     },
-    statsRow: {
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-        gap: 20,
+    uploadCard: {
+        background: "#ffffff",
+        borderRadius: 16,
+        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+        padding: 24,
         marginBottom: 24,
     },
-    statCard: {
-        background: "#ffffff",
-        borderRadius: 16,
-        padding: 16,
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-        transition: "transform 0.2s, box-shadow 0.2s",
+    cardHeader: {
+        marginBottom: 24,
     },
-    statIcon: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
-        background: "linear-gradient(135deg,#ff6b00,#ff9c3a)",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+    cardTitle: {
+        margin: 0,
         fontSize: 20,
-    },
-    statIconAlt: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
-        background: "linear-gradient(135deg,#ff8c1a,#ffb347)",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 20,
-    },
-    statIconWarn: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
-        background: "linear-gradient(135deg,#ff5b57,#ff9f7f)",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 20,
-    },
-    statLabel: { margin: 0, fontSize: 12, color: "#000", textTransform: "uppercase", opacity: 0.6 },
-    statValue: { margin: 0, fontSize: 22, fontWeight: 700, color: "#000", marginTop: 4 },
-    tableCard: {
-        background: "#ffffff",
-        borderRadius: 16,
-        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-        padding: 16,
-        minWidth: 0,
-        overflow: "hidden",
-    },
-    tableHeaderRow: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    chipBtn: {
-        borderRadius: 999,
-        border: "1px solid rgba(255,107,0,0.4)",
-        background: "#fff7ee",
-        color: "#ff6b00",
-        padding: "6px 14px",
-        fontSize: 13,
-        cursor: "pointer",
-        fontWeight: 600,
-    },
-    tableHead: {
-        display: "flex",
-        padding: "10px 12px",
-        borderRadius: 10,
-        background: "#fff7ee",
-        fontSize: 12,
+        fontWeight: 700,
         color: "#000",
-        fontWeight: 600,
-        opacity: 0.7,
     },
-    th: { textTransform: "uppercase" },
-    tableBody: {
+    cardSubtitle: {
+        margin: 0,
         marginTop: 4,
-        maxHeight: "calc(100vh - 360px)",
-        overflowY: "auto",
-    },
-    tr: {
-        display: "flex",
-        alignItems: "center",
-        padding: "10px 12px",
-        borderBottom: "1px solid rgba(0,0,0,0.03)",
         fontSize: 14,
-        transition: "background 0.2s",
+        color: "#000",
+        opacity: 0.6,
+    },
+    form: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+    },
+    formRow: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+        gap: 16,
+    },
+    formGroup: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: 600,
         color: "#000",
     },
-    td: { display: "flex", alignItems: "center", gap: 8 },
-    thumb: {
-        width: 80,
-        height: 48,
-        borderRadius: 8,
-        objectFit: "cover",
-        border: "1px solid rgba(0,0,0,0.06)",
+    input: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        border: "1px solid rgba(0,0,0,0.12)",
+        fontSize: 14,
+        outline: "none",
+        transition: "border 0.2s",
+        color: "#000",
     },
-    tag: {
-        padding: "4px 10px",
-        borderRadius: 999,
+    textarea: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        border: "1px solid rgba(0,0,0,0.12)",
+        fontSize: 14,
+        outline: "none",
+        minHeight: 100,
+        resize: "vertical",
+        fontFamily: "inherit",
+        color: "#000",
+    },
+    fileInputWrapper: {
+        position: "relative",
+    },
+    fileInput: {
+        position: "absolute",
+        opacity: 0,
+        width: "100%",
+        height: "100%",
+        cursor: "pointer",
+    },
+    fileLabel: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        border: "2px dashed rgba(255,107,0,0.3)",
         background: "#fff7ee",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        cursor: "pointer",
+        transition: "all 0.2s",
         color: "#ff6b00",
-        fontSize: 12,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 500,
     },
-    smallPrimary: {
-        padding: "6px 10px",
-        marginRight: 6,
-        borderRadius: 6,
+    fileIcon: {
+        fontSize: 20,
+    },
+    uploadBtn: {
+        padding: "14px 24px",
+        borderRadius: 10,
         border: "none",
         background: "linear-gradient(135deg,#ff6b00,#ff8c1a)",
         color: "#fff",
-        fontSize: 12,
-        cursor: "pointer",
+        fontSize: 16,
         fontWeight: 600,
+        cursor: "pointer",
         transition: "transform 0.2s",
+        marginTop: 8,
     },
-    smallDanger: {
-        padding: "6px 10px",
-        borderRadius: 6,
-        border: "none",
-        background: "linear-gradient(135deg,#e03131,#ff5b57)",
-        color: "#fff",
-        fontSize: 12,
+    successMessage: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: "#d4edda",
+        border: "1px solid #c3e6cb",
+        color: "#155724",
+        fontSize: 14,
+        fontWeight: 500,
+    },
+    errorMessage: {
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: "#f8d7da",
+        border: "1px solid #f5c6cb",
+        color: "#721c24",
+        fontSize: 14,
+        fontWeight: 500,
+    },
+    recentCard: {
+        background: "#ffffff",
+        borderRadius: 16,
+        boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+        padding: 24,
+    },
+    videoGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+        gap: 20,
+        marginTop: 16,
+    },
+    videoCard: {
+        borderRadius: 12,
+        overflow: "hidden",
+        background: "#f9f9f9",
+        transition: "transform 0.2s, box-shadow 0.2s",
         cursor: "pointer",
+    },
+    thumbnail: {
+        width: "100%",
+        height: 120,
+        objectFit: "cover",
+    },
+    videoInfo: {
+        padding: 12,
+    },
+    videoTitle: {
+        margin: 0,
+        fontSize: 14,
         fontWeight: 600,
-        transition: "transform 0.2s",
+        color: "#000",
+        marginBottom: 6,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+    },
+    categoryTag: {
+        padding: "4px 8px",
+        borderRadius: 999,
+        background: "#fff7ee",
+        color: "#ff6b00",
+        fontSize: 11,
+        fontWeight: 600,
     },
 };
 
-export default VidStreemDashboard;
+export default UploadVideo;
