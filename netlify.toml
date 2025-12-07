@@ -6,3 +6,8 @@
   from = "/*"
   to = "/index.html"
   status = 200
+[[redirects]]
+from = "/api/*"
+to = "http://vidstreem.runasp.net/api/:splat"
+status = 200
+force = true

@@ -12,8 +12,8 @@ function VidStreemDashboard() {
     const [showAvatarMenu, setShowAvatarMenu] = useState(false); // New state
 
     useEffect(() => {
-        axios
-            .get("http://vidstreem.runasp.net/api/VideohandelApi/thumbnails?take=50&skip=0")
+
+        axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
             .then((res) => {
                 setVideos(res.data);
                 setLoading(false);

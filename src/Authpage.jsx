@@ -43,7 +43,7 @@ function LoginForm() {
         setError("");
 
         try {
-            const res = await fetch("http://vidstreem.runasp.net/api/User/login", {
+            const res = await fetch("/api/User/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -134,7 +134,7 @@ function SignupForm() {
         setLoading(true);
 
         try {
-            const res = await fetch("http://vidstreem.runasp.net/api/User/register", {
+            const res = await fetch("/api/User/register", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
