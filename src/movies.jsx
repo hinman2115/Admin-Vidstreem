@@ -14,17 +14,23 @@ function VidStreemDashboard() {
     useEffect(() => {
         axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
             .then(res => {
-                // Transform HTTP image URLs to relative proxy URLs
                 const transformedVideos = res.data.map(video => ({
                     ...video,
                     thumbnailUrl: video.thumbnailUrl?.replace(
-                        'http://vidstreem.runasp.net', ''
+                        "http://vidstreem.runasp.net",
+                        ""
                     )
                 }));
                 setVideos(transformedVideos);
             })
-
+            .catch(err => {
+                console.error("Error while fetching videos:", err);
+            })
+            .finally(() => {
+                setLoading(false); // important
+            });
     }, []);
+
 
     const filtered = videos.filter(v =>
         v.title?.toLowerCase().includes(searchTerm.toLowerCase())
