@@ -1,20 +1,23 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+command = "npm run build"
+publish = "dist"
 
+# Proxy API requests
 [[redirects]]
-  from = "/api/*"
-  to = "http://vidstreem.runasp.net/api/:splat"
-  status = 200
-  force = true
+from = "/api/*"
+to = "http://vidstreem.runasp.net/api/:splat"
+status = 200
+force = true
 
+# Proxy image/upload requests (ADD THIS)
 [[redirects]]
-  from = "/uploads/*"
-  to = "http://vidstreem.runasp.net/uploads/:splat"
-  status = 200
-  force = true
+from = "/uploads/*"
+to = "http://vidstreem.runasp.net/uploads/:splat"
+status = 200
+force = true
 
+# React Router catch-all (must be last)
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from = "/*"
+to = "/index.html"
+status = 200
