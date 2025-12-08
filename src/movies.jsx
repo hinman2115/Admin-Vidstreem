@@ -65,8 +65,18 @@ function UploadVideo() {
 
     const loadThumbnails = () => {
         axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
-            .then(res => setVideos(res.data))
-            .catch(err => console.error("Error loading videos:", err));
+            .then(res => {
+                // Transform HTTP image URLs to relative proxy URLs
+                const transformedVideos = res.data.map(video => ({
+                    ...video,
+                    thumbnailUrl: video.thumbnailUrl?.replace(
+                        'http://vidstreem.runasp.net',
+                        ''
+                    )
+                }));
+                setVideos(transformedVideos);
+            })
+
     };
 
     useEffect(() => {
