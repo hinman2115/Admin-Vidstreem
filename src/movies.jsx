@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import "./css/VidStreemDashboard.css";
 
 function VidStreemDashboard() {
@@ -31,6 +31,24 @@ function VidStreemDashboard() {
             });
     }, []);
 
+    //for delete
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this video?")) return;
+
+        try {
+            await axios.delete(`http://vidstreem.runasp.net/api/VideohandelApi/${id}`);
+            setVideos(prev => prev.filter(v => v.id !== id)); // Remove from UI instantly
+        } catch (err) {
+            console.error("Delete failed:", err);
+            alert("Failed to delete video");
+        }
+    };
+
+    //for edit
+    const handleEdit = (id) => {
+        navigate(`/editvideo/${id}`);
+    };
+
 
     const filtered = videos.filter(v =>
         v.title?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -51,8 +69,8 @@ function VidStreemDashboard() {
     if (loading) {
         return (
             <div style={styles.fullscreenCenter}>
-                <div style={styles.spinner} />
-                <p style={{ marginTop: 12, color: "#ff6b00" }}>Loading VidStreem...</p>
+                <div style={styles.spinner}/>
+                <p style={{marginTop: 12, color: "#ff6b00"}}>Loading VidStreem...</p>
             </div>
         );
     }
@@ -79,13 +97,13 @@ function VidStreemDashboard() {
                         <span style={styles.brandMini}>VS</span>
                     ) : (
                         <span style={styles.brandFull}>
-                            Vid<span style={{ color: "#ff6b00" }}>Streem</span>
+                            Vid<span style={{color: "#ff6b00"}}>Streem</span>
                         </span>
                     )}
                 </div>
 
                 <nav style={styles.navList}>
-                    <button style={{ ...styles.navItem, ...styles.navItemActive }}>
+                    <button style={{...styles.navItem, ...styles.navItemActive}}>
                         <span style={styles.navIcon}>▣</span>
                         {!sidebarCollapsed && <span>Dashboard</span>}
                     </button>
@@ -160,7 +178,7 @@ function VidStreemDashboard() {
                                             {localStorage.getItem("role") || "User"}
                                         </p>
                                     </div>
-                                    <div style={styles.menuDivider} />
+                                    <div style={styles.menuDivider}/>
                                     <button
                                         style={styles.menuItem}
                                         onClick={() => navigate("/profile")}
@@ -175,7 +193,7 @@ function VidStreemDashboard() {
                                         <span style={styles.menuIcon}>⚙</span>
                                         Settings
                                     </button>
-                                    <div style={styles.menuDivider} />
+                                    <div style={styles.menuDivider}/>
                                     <button
                                         style={styles.menuItemDanger}
                                         onClick={handleLogout}
@@ -223,37 +241,42 @@ function VidStreemDashboard() {
                     {/* Table card */}
                     <section style={styles.tableCard}>
                         <div style={styles.tableHeaderRow}>
-                            <h2 style={{ margin: 0, fontSize: 18, color: "#000" }}>Video Library</h2>
+                            <h2 style={{margin: 0, fontSize: 18, color: "#000"}}>Video Library</h2>
                             <button style={styles.chipBtn}>Filter</button>
                         </div>
 
                         <div style={styles.tableHead}>
-                            <div style={{ ...styles.th, flex: 0.5 }}>#</div>
-                            <div style={{ ...styles.th, flex: 1 }}>Thumbnail</div>
-                            <div style={{ ...styles.th, flex: 3 }}>Title</div>
-                            <div style={{ ...styles.th, flex: 1.5 }}>Category</div>
-                            <div style={{ ...styles.th, flex: 2 }}>Actions</div>
+                            <div style={{...styles.th, flex: 0.5}}>#</div>
+                            <div style={{...styles.th, flex: 1}}>Thumbnail</div>
+                            <div style={{...styles.th, flex: 3}}>Title</div>
+                            <div style={{...styles.th, flex: 1.5}}>Category</div>
+                            <div style={{...styles.th, flex: 2}}>Actions</div>
                         </div>
 
                         <div style={styles.tableBody}>
                             {filtered.map((v, idx) => (
                                 <div key={v.id} style={styles.tr}>
-                                    <div style={{ ...styles.td, flex: 0.5, color: "#000" }}>{idx + 1}</div>
-                                    <div style={{ ...styles.td, flex: 1 }}>
+                                    <div style={{...styles.td, flex: 0.5, color: "#000"}}>{idx + 1}</div>
+                                    <div style={{...styles.td, flex: 1}}>
                                         <img
                                             src={v.thumbnailUrl}
                                             alt={v.title}
                                             style={styles.thumb}
                                         />
                                     </div>
-                                    <div style={{ ...styles.td, flex: 3, color: "#000" }}>{v.title}</div>
-                                    <div style={{ ...styles.td, flex: 1.5 }}>
+                                    <div style={{...styles.td, flex: 3, color: "#000"}}>{v.title}</div>
+                                    <div style={{...styles.td, flex: 1.5}}>
                                         <span style={styles.tag}>{v.categoryName}</span>
                                     </div>
                                     <div style={{ ...styles.td, flex: 2 }}>
-                                        <button style={styles.smallPrimary}>Edit</button>
-                                        <button style={styles.smallDanger}>Delete</button>
+                                        <button style={styles.smallPrimary} onClick={() => handleEdit(v.id)}>
+                                            Edit
+                                        </button>
+                                        <button style={styles.smallDanger} onClick={() => handleDelete(v.id)}>
+                                            Delete
+                                        </button>
                                     </div>
+
                                 </div>
                             ))}
                         </div>
@@ -304,8 +327,8 @@ const styles = {
         padding: "20px 18px",
         borderBottom: "1px solid rgba(0,0,0,0.04)",
     },
-    brandFull: { fontWeight: 700, fontSize: 22, color: "#000" },
-    brandMini: { fontWeight: 700, fontSize: 18, color: "#ff6b00" },
+    brandFull: {fontWeight: 700, fontSize: 22, color: "#000"},
+    brandMini: {fontWeight: 700, fontSize: 18, color: "#ff6b00"},
     navList: {
         flex: 1,
         padding: "12px 8px",
@@ -331,7 +354,7 @@ const styles = {
         color: "#ff6b00",
         boxShadow: "0 0 0 1px rgba(255,107,0,0.25)",
     },
-    navIcon: { fontSize: 16, width: 20, textAlign: "center" },
+    navIcon: {fontSize: 16, width: 20, textAlign: "center"},
     collapse: {
         margin: 12,
         padding: "8px 10px",
@@ -364,10 +387,10 @@ const styles = {
         flexWrap: "wrap",
         gap: 12,
     },
-    topTitle: { margin: 0, fontSize: 22, fontWeight: 700, color: "#000" },
-    breadcrumb: { margin: 0, fontSize: 12, color: "#000", marginTop: 2, opacity: 0.6 },
-    topRight: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
-    searchBox: { position: "relative" },
+    topTitle: {margin: 0, fontSize: 22, fontWeight: 700, color: "#000"},
+    breadcrumb: {margin: 0, fontSize: 12, color: "#000", marginTop: 2, opacity: 0.6},
+    topRight: {display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap"},
+    searchBox: {position: "relative"},
     searchInput: {
         padding: "8px 12px",
         borderRadius: 999,
@@ -527,8 +550,8 @@ const styles = {
         justifyContent: "center",
         fontSize: 20,
     },
-    statLabel: { margin: 0, fontSize: 12, color: "#000", textTransform: "uppercase", opacity: 0.6 },
-    statValue: { margin: 0, fontSize: 22, fontWeight: 700, color: "#000", marginTop: 4 },
+    statLabel: {margin: 0, fontSize: 12, color: "#000", textTransform: "uppercase", opacity: 0.6},
+    statValue: {margin: 0, fontSize: 22, fontWeight: 700, color: "#000", marginTop: 4},
     tableCard: {
         background: "#ffffff",
         borderRadius: 16,
@@ -563,7 +586,7 @@ const styles = {
         fontWeight: 600,
         opacity: 0.7,
     },
-    th: { textTransform: "uppercase" },
+    th: {textTransform: "uppercase"},
     tableBody: {
         marginTop: 4,
         maxHeight: "calc(100vh - 360px)",
@@ -578,7 +601,7 @@ const styles = {
         transition: "background 0.2s",
         color: "#000",
     },
-    td: { display: "flex", alignItems: "center", gap: 8 },
+    td: {display: "flex", alignItems: "center", gap: 8},
     thumb: {
         width: 80,
         height: 48,
