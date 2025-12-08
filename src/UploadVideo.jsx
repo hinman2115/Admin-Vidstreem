@@ -56,7 +56,7 @@ function UploadVideo() {
             loadThumbnails();
         } catch (error) {
             console.error("Upload failed:", error);
-            setMessage("Upload failed. Please try again. ❌");
+            setMessage("Upload failed. Please try again.❌");
             setMessageType("error");
         } finally {
             setUploading(false);

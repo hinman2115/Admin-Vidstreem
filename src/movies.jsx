@@ -18,8 +18,7 @@ function VidStreemDashboard() {
                 const transformedVideos = res.data.map(video => ({
                     ...video,
                     thumbnailUrl: video.thumbnailUrl?.replace(
-                        'http://vidstreem.runasp.net',
-                        ''
+                        'http://vidstreem.runasp.net', ''
                     )
                 }));
                 setVideos(transformedVideos);
