@@ -9,7 +9,13 @@ function VidStreemDashboard() {
     const [loading, setLoading] = useState(true);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [showAvatarMenu, setShowAvatarMenu] = useState(false); // New state
+    const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+
+    // Modal states
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [editForm, setEditForm] = useState({title: "", categoryName: ""});
 
     useEffect(() => {
         axios.get("/api/VideohandelApi/thumbnails?take=50&skip=0")
@@ -27,28 +33,63 @@ function VidStreemDashboard() {
                 console.error("Error while fetching videos:", err);
             })
             .finally(() => {
-                setLoading(false); // important
+                setLoading(false);
             });
     }, []);
 
-    //for delete
-    const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this video?")) return;
+    // Open delete confirmation modal
+    const handleDeleteClick = (video) => {
+        setSelectedVideo(video);
+        setShowDeleteModal(true);
+    };
 
+    // Confirm delete
+    const confirmDelete = async () => {
         try {
-            await axios.delete(`http://vidstreem.runasp.net/api/VideohandelApi/${id}`);
-            setVideos(prev => prev.filter(v => v.id !== id)); // Remove from UI instantly
+            await axios.delete(`http://vidstreem.runasp.net/api/VideohandelApi/${selectedVideo.id}`);
+            setVideos(prev => prev.filter(v => v.id !== selectedVideo.id));
+            setShowDeleteModal(false);
+            setSelectedVideo(null);
         } catch (err) {
             console.error("Delete failed:", err);
             alert("Failed to delete video");
         }
     };
 
-    //for edit
-    const handleEdit = (id) => {
-        navigate(`/editvideo/${id}`);
+    // Open edit modal
+    const handleEditClick = (video) => {
+        setSelectedVideo(video);
+        setEditForm({
+            title: video.title,
+            categoryName: video.categoryName
+        });
+        setShowEditModal(true);
     };
 
+    // Confirm edit
+    const confirmEdit = async () => {
+        try {
+            await axios.put(`http://vidstreem.runasp.net/api/VideohandelApi/${selectedVideo.id}`, {
+                ...selectedVideo,
+                title: editForm.title,
+                categoryName: editForm.categoryName
+            });
+
+            // Update local state
+            setVideos(prev => prev.map(v =>
+                v.id === selectedVideo.id
+                    ? {...v, title: editForm.title, categoryName: editForm.categoryName}
+                    : v
+            ));
+
+            setShowEditModal(false);
+            setSelectedVideo(null);
+            setEditForm({title: "", categoryName: ""});
+        } catch (err) {
+            console.error("Edit failed:", err);
+            alert("Failed to update video");
+        }
+    };
 
     const filtered = videos.filter(v =>
         v.title?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -85,7 +126,7 @@ function VidStreemDashboard() {
 
     return (
         <div style={styles.appShell}>
-            Sidebar
+            {/* Sidebar */}
             <aside
                 style={{
                     ...styles.sidebar,
@@ -269,20 +310,127 @@ function VidStreemDashboard() {
                                         <span style={styles.tag}>{v.categoryName}</span>
                                     </div>
                                     <div style={{ ...styles.td, flex: 2 }}>
-                                        <button style={styles.smallPrimary} onClick={() => handleEdit(v.id)}>
+                                        <button style={styles.smallPrimary} onClick={() => handleEditClick(v)}>
                                             Edit
                                         </button>
-                                        <button style={styles.smallDanger} onClick={() => handleDelete(v.id)}>
+                                        <button style={styles.smallDanger} onClick={() => handleDeleteClick(v)}>
                                             Delete
                                         </button>
                                     </div>
-
                                 </div>
                             ))}
                         </div>
                     </section>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+                <div style={styles.modalOverlay} onClick={() => setShowDeleteModal(false)}>
+                    <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div style={styles.modalHeader}>
+                            <h3 style={styles.modalTitle}>🗑️ Delete Video</h3>
+                            <button
+                                style={styles.modalClose}
+                                onClick={() => setShowDeleteModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div style={styles.modalBody}>
+                            <p style={styles.modalText}>
+                                Are you sure you want to delete <strong>"{selectedVideo?.title}"</strong>?
+                            </p>
+                            <p style={styles.modalWarning}>
+                                This action cannot be undone.
+                            </p>
+                        </div>
+
+                        <div style={styles.modalFooter}>
+                            <button
+                                style={styles.modalBtnSecondary}
+                                onClick={() => setShowDeleteModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                style={styles.modalBtnDanger}
+                                onClick={confirmDelete}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <div style={styles.modalOverlay} onClick={() => setShowEditModal(false)}>
+                    <div style={styles.modalContentLarge} onClick={(e) => e.stopPropagation()}>
+                        <div style={styles.modalHeader}>
+                            <h3 style={styles.modalTitle}>✏️ Edit Video</h3>
+                            <button
+                                style={styles.modalClose}
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div style={styles.modalBody}>
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Title</label>
+                                <input
+                                    type="text"
+                                    style={styles.formInput}
+                                    value={editForm.title}
+                                    onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                                    placeholder="Enter video title"
+                                />
+                            </div>
+
+                            <div style={styles.formGroup}>
+                                <label style={styles.formLabel}>Category</label>
+                                <input
+                                    type="text"
+                                    style={styles.formInput}
+                                    value={editForm.categoryName}
+                                    onChange={(e) => setEditForm({...editForm, categoryName: e.target.value})}
+                                    placeholder="Enter category name"
+                                />
+                            </div>
+
+                            {selectedVideo?.thumbnailUrl && (
+                                <div style={styles.formGroup}>
+                                    <label style={styles.formLabel}>Current Thumbnail</label>
+                                    <img
+                                        src={selectedVideo.thumbnailUrl}
+                                        alt="Thumbnail"
+                                        style={styles.modalThumb}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={styles.modalFooter}>
+                            <button
+                                style={styles.modalBtnSecondary}
+                                onClick={() => setShowEditModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                style={styles.modalBtnPrimary}
+                                onClick={confirmEdit}
+                            >
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -639,6 +787,151 @@ const styles = {
         cursor: "pointer",
         fontWeight: 600,
         transition: "transform 0.2s",
+    },
+
+    // Modal Styles
+    modalOverlay: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+        backdropFilter: "blur(4px)",
+    },
+    modalContent: {
+        background: "#ffffff",
+        borderRadius: 20,
+        width: "90%",
+        maxWidth: 460,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        animation: "slideUp 0.3s ease",
+    },
+    modalContentLarge: {
+        background: "#ffffff",
+        borderRadius: 20,
+        width: "90%",
+        maxWidth: 560,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        animation: "slideUp 0.3s ease",
+    },
+    modalHeader: {
+        padding: "24px 24px 16px",
+        borderBottom: "1px solid rgba(0,0,0,0.08)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    modalTitle: {
+        margin: 0,
+        fontSize: 20,
+        fontWeight: 700,
+        color: "#000",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+    },
+    modalClose: {
+        border: "none",
+        background: "transparent",
+        fontSize: 32,
+        color: "#666",
+        cursor: "pointer",
+        width: 32,
+        height: 32,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        transition: "background 0.2s",
+        lineHeight: 1,
+        padding: 0,
+    },
+    modalBody: {
+        padding: "24px",
+    },
+    modalText: {
+        margin: 0,
+        fontSize: 15,
+        color: "#000",
+        lineHeight: 1.6,
+    },
+    modalWarning: {
+        margin: "12px 0 0",
+        fontSize: 13,
+        color: "#e03131",
+        fontWeight: 600,
+    },
+    modalFooter: {
+        padding: "16px 24px 24px",
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+    },
+    modalBtnSecondary: {
+        padding: "10px 24px",
+        borderRadius: 999,
+        border: "1px solid rgba(0,0,0,0.15)",
+        background: "#ffffff",
+        color: "#000",
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "all 0.2s",
+    },
+    modalBtnDanger: {
+        padding: "10px 24px",
+        borderRadius: 999,
+        border: "none",
+        background: "linear-gradient(135deg,#e03131,#ff5b57)",
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "transform 0.2s",
+    },
+    modalBtnPrimary: {
+        padding: "10px 24px",
+        borderRadius: 999,
+        border: "none",
+        background: "linear-gradient(135deg,#ff6b00,#ff8c1a)",
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "transform 0.2s",
+    },
+    formGroup: {
+        marginBottom: 20,
+    },
+    formLabel: {
+        display: "block",
+        marginBottom: 8,
+        fontSize: 14,
+        fontWeight: 600,
+        color: "#000",
+    },
+    formInput: {
+        width: "100%",
+        padding: "12px 16px",
+        borderRadius: 12,
+        border: "1px solid rgba(0,0,0,0.12)",
+        fontSize: 14,
+        color: "#000",
+        outline: "none",
+        transition: "border 0.2s",
+        boxSizing: "border-box",
+    },
+    modalThumb: {
+        width: "100%",
+        maxWidth: 320,
+        height: "auto",
+        borderRadius: 12,
+        border: "1px solid rgba(0,0,0,0.08)",
     },
 };
 
